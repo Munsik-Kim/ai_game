@@ -1,0 +1,47 @@
+# Project Context
+This project is "Living World Core," a text-based AI RPG engine.
+It serves as the backend logic (Brain) for a future Unreal Engine 5 game.
+The goal is to simulate a dynamic game world where NPC behaviors and narratives are driven by LLMs (Gemini), while the game state is strictly managed by code.
+
+# Tech Stack
+- **Language:** Python 3.10+
+- **Framework:** FastAPI (REST API for future UE5 communication)
+- **AI Provider:** Google Gemini API (`google-generativeai`) using Gemini 1.5 Flash
+- **Data Validation:** Pydantic V2 (Strict typing is mandatory)
+- **Vector DB:** ChromaDB (Local storage for World Lore & Rules)
+- **Dev UI:** Streamlit (For real-time state visualization and debugging)
+
+# Core Architecture Rules (CRITICAL)
+
+1.  **State vs. Narrative Separation:**
+    - **Logic First:** The LLM does NOT directly change the database. It outputs a "proposed action" or "structured decision" (JSON).
+    - **Determinism:** Game state changes (HP, Inventory, Reputation) must be handled by Python logic, not by LLM generation.
+    - **Flow:** User Input -> RAG -> LLM Decision -> Python State Update -> LLM Narration Generation.
+
+2.  **Structured Output First:**
+    - Always use Pydantic models or `response_schema` when requesting logic from Gemini.
+    - Never parse raw string output (Regex) for game logic. Ensure the LLM outputs valid JSON.
+
+3.  **UE5 Compatibility (Future Proofing):**
+    - API Endpoints must be RESTful and stateless where possible.
+    - Keep data structures flat and simple to ensure easy mapping to UE5 Blueprints/Structs later.
+
+4.  **RAG Strategy:**
+    - Split context into "Static Rules" (Game Mechanics) and "Dynamic Context" (World Lore, NPC Memory).
+    - Do not overload the Context Window. Retrieve only relevant rules.
+
+# Coding Standards
+
+- **Type Hinting:** All functions must have type hints. Use `typing.List`, `typing.Optional`, etc.
+- **Error Handling:** AI calls can fail. Implement retries and fallback behaviors (e.g., if Gemini fails, return a default "NPC is confused" state).
+- **Environment:** Use `python-dotenv` for API Keys. Never hardcode credentials.
+- **Modular Design:**
+    - `core/`: Game engine logic (State managers).
+    - `api/`: FastAPI endpoints.
+    - `ai/`: Gemini wrappers and Prompt templates.
+    - `db/`: ChromaDB and JSON handling.
+
+# Persona & Tone for Cursor
+- Act as a Senior Backend Game Developer specializing in AI integration.
+- When generating code, prioritize "Safety" and "Structure" over "Creativity".
+- Explain *why* a certain data structure is chosen in the context of future UE5 migration.
