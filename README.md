@@ -43,7 +43,9 @@ NPC들이 AI를 통해 실시간으로 반응하며, 플레이어와의 상호�
 - 🤖 **AI (LLM)**: NPC의 대사, 감정, 행동 지문 등 **내러티브** 생성
 - 💻 **Python 로직**: 게임 상태(HP, 관계 점수, 인벤토리 등) **엄격한 관리**
 
-이를 통해 AI의 창의성과 게임 로직의 안정성을 동시에 확보합니다.
+현재 구현은 NPC 대화와 제한된 상태 갱신을 연결하는 프로토타입입니다. [게임 엔진](app/core/game_engine.py)은 감정·관계 점수와 최근 기억을 갱신하고, [API](app/api/endpoints.py)는 행동·상태 조회·초기화를 제공합니다.
+
+**구현 범위와 남은 확장:** HP·인벤토리·시간·날씨 필드는 있지만, 일반 전투·퀘스트·아이템 거래·자동 세계 진행 로직이 완성된 것은 아닙니다. 상태는 프로세스 메모리에 있으며 사용자별 영속 저장도 별도 구현이 필요합니다. 이 구분은 코드 확인 결과이며 새 Gemini API 요청을 실행한 검증은 아닙니다.
 
 ### ✨ 특징
 
@@ -61,12 +63,12 @@ NPC들이 AI를 통해 실시간으로 반응하며, 플레이어와의 상호�
 ### 1. AI 기반 NPC 상호작용
 - 플레이어의 행동에 따라 NPC가 동적으로 반응
 - NPC의 성격, 배경, 현재 감정을 고려한 자연스러운 대화
-- JSON 구조화 출력으로 안정적인 응답 보장
+- JSON 출력을 요청하고 파싱하며, 파싱·API 오류에는 기본 응답을 반환합니다. 모든 응답의 정확성을 보장하지 않습니다.
 
 ### 2. 게임 상태 관리
-- **플레이어**: HP, MP, Gold, 인벤토리
-- **NPC**: 감정 상태, 관계 점수, 단기 기억
-- **월드**: 시간, 날씨, 현재 위치
+- **플레이어**: HP, MP, Gold, 인벤토리의 초기값과 상태 조회
+- **NPC**: 같은 위치의 첫 NPC를 선택해 감정·관계 점수·최근 대화 기억 갱신
+- **월드**: 시간·날씨·위치 초기값을 대화 문맥으로 제공
 
 ### 3. Streamlit 웹 UI
 - 실시간 게임 상태 표시
@@ -128,8 +130,8 @@ AI_Text_Game/
 ### 1. 저장소 클론
 
 ```bash
-git clone https://github.com/yourusername/ai-text-game.git
-cd ai-text-game
+git clone https://github.com/Munsik-Kim/ai_game.git
+cd ai_game
 ```
 
 ### 2. 환경 설정
@@ -355,13 +357,11 @@ curl -X POST "http://localhost:8000/api/reset"
 ```
 플레이어 행동
     ↓
-RAG (컨텍스트 수집)
+현재 NPC·월드 상태를 프롬프트로 구성
     ↓
-LLM (제안된 행동 생성 - JSON)
+Gemini 요청 1회 (대사·감정·관계 변화 JSON)
     ↓
-Python 로직 (게임 상태 업데이트)
-    ↓
-LLM (내러티브 생성)
+Python 로직 (감정·관계 점수·최근 기억 업데이트)
     ↓
 응답 반환
 ```
@@ -370,7 +370,7 @@ LLM (내러티브 생성)
 
 #### 2. Structured Output
 
-모든 AI 응답은 Pydantic 모델로 검증됩니다:
+AI 서비스는 JSON을 파싱하고 관계 변화량을 -5~5로 제한합니다. Pydantic은 상태와 API 요청·응답의 형식을 정의합니다. 모든 LLM 필드를 별도의 Pydantic 모델로 검증하는 경로는 아닙니다:
 
 ```python
 {
@@ -431,8 +431,8 @@ LLM (내러티브 생성)
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/yourusername/ai-text-game.git
-cd ai-text-game
+git clone https://github.com/Munsik-Kim/ai_game.git
+cd ai_game
 
 # 2. Conda 환경 생성
 conda create -n ai_game python=3.11
@@ -551,7 +551,7 @@ streamlit run streamlit_app.py --server.port 8502
 
 ## 📞 문의
 
-문제가 발생하거나 제안사항이 있으시면 [Issues](https://github.com/yourusername/ai-text-game/issues)에 등록해주세요.
+문제가 발생하거나 제안사항이 있으시면 [Issues](https://github.com/Munsik-Kim/ai_game/issues)에 등록해주세요.
 
 ---
 
